@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cunyi.doctor.llm.LlamaEngine
+import com.cunyi.doctor.llm.ModelConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -24,9 +25,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    fun loadModel(onProgress: (Int, String) -> Unit) {
+    fun loadModel(model: ModelConfig? = null, onProgress: (Int, String) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
+            if (model != null) {
+                engine.selectModel(model)
+            }
             engine.loadModel(onProgress)
             _isLoading.value = false
         }

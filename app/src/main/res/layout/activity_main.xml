@@ -28,6 +28,18 @@
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
+        <!-- 免责声明横幅 -->
+        <TextView
+            android:id="@+id/tv_disclaimer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚠️ AI建议仅供参考，不能替代医生诊断。如有不适，请及时就医。"
+            android:textSize="11sp"
+            android:textColor="#795548"
+            android:background="#FFF8E1"
+            android:padding="6dp"
+            android:gravity="center" />
+
         <!-- Status bar -->
         <LinearLayout
             android:layout_width="match_parent"

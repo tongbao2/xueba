@@ -2,6 +2,7 @@
 #include <android/log.h>
 #include <cstring>
 #include <cstdlib>
+#include <cstdint>
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -19,13 +20,14 @@ using namespace std;
 static JavaVM* g_jvm = nullptr;
 
 struct LlamaState {
-    llama_model*   model = nullptr;
-    llama_context* ctx    = nullptr;
+    llama_model*   model   = nullptr;
+    llama_context* ctx     = nullptr;
+    llama_sampler* sampler = nullptr;
     atomic<bool>   running{false};
-    thread*        inferenceThread = nullptr;
-    mutex          mtx;
-    string         modelPath;
-    string         lastError;
+    thread*         inferenceThread = nullptr;
+    mutex           mtx;
+    string          modelPath;
+    string          lastError;
 };
 
 static LlamaState g_state;
@@ -59,7 +61,7 @@ static void runInference(const string& prompt, jobject callback) {
     if (!env) {
         LOGE("Cannot attach thread");
         g_state.running = false;
-        g_jvm->DetachCurrentThread();
+        if (g_jvm) g_jvm->DetachCurrentThread();
         return;
     }
 
@@ -71,15 +73,30 @@ static void runInference(const string& prompt, jobject callback) {
         return;
     }
 
-    // 每次推理前清空 KV cache，避免上下文污染
-    llama_kv_cache_clear(g_state.ctx);
+    if (!g_state.sampler) {
+        deliverCallback(env, callback, "onError", "[ERROR] 采样器未初始化");
+        env->DeleteGlobalRef(callback);
+        g_jvm->DetachCurrentThread();
+        g_state.running = false;
+        return;
+    }
+
+    // 获取 vocab
+    const llama_vocab* vocab = llama_model_get_vocab(g_state.model);
+    if (!vocab) {
+        deliverCallback(env, callback, "onError", "[ERROR] 无法获取词表");
+        env->DeleteGlobalRef(callback);
+        g_jvm->DetachCurrentThread();
+        g_state.running = false;
+        return;
+    }
 
     // ── 1. Tokenize ──────────────────────────────────────────────────────────
     const int MAX_TOKENS = 512;
     vector<llama_token> tokens(MAX_TOKENS);
 
     int n_tokens = llama_tokenize(
-        g_state.model,
+        vocab,
         prompt.c_str(),
         (int32_t)prompt.size(),
         tokens.data(),
@@ -89,12 +106,11 @@ static void runInference(const string& prompt, jobject callback) {
     );
 
     if (n_tokens < 0) {
-        // 负值表示需要更大的 buffer
         int needed = -n_tokens;
         LOGW("Tokenize needs %d tokens, retrying", needed);
         tokens.resize(needed);
         n_tokens = llama_tokenize(
-            g_state.model,
+            vocab,
             prompt.c_str(),
             (int32_t)prompt.size(),
             tokens.data(),
@@ -114,10 +130,9 @@ static void runInference(const string& prompt, jobject callback) {
     tokens.resize(n_tokens);
     LOGI("Prompt tokenized: %d tokens", n_tokens);
 
-    // ── 2. Decode prompt (不要 free llama_batch_get_one 的结果) ──────────────
-    // llama_batch_get_one 返回的是栈上结构，不需要 free
+    // ── 2. Decode prompt ─────────────────────────────────────────────────────
     {
-        llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens, 0, 0);
+        llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
         int ret = llama_decode(g_state.ctx, batch);
         if (ret != 0) {
             LOGE("Prompt decode failed: %d", ret);
@@ -128,52 +143,33 @@ static void runInference(const string& prompt, jobject callback) {
             return;
         }
     }
+    LOGI("Prompt decoded OK");
 
     // ── 3. Autoregressive generation ─────────────────────────────────────────
     string output;
-    const int max_new = 256;  // 减少最大生成长度，降低崩溃风险
-    llama_pos cur_pos = (llama_pos)n_tokens;  // 当前 KV cache 位置
+    const int max_new = 256;
 
     for (int i = 0; i < max_new && g_state.running; ++i) {
-        // 获取最后一个 token 的 logits
-        float* logits = llama_get_logits_ith(g_state.ctx, -1);
-        if (!logits) {
-            LOGE("logits null at step %d", i);
-            break;
-        }
+        // 从最后一个 token 的 logits 采样
+        llama_token new_tok = llama_sampler_sample(g_state.sampler, g_state.ctx, -1);
 
-        const int n_vocab = llama_n_vocab(g_state.model);
-        vector<llama_token_data> cdata(n_vocab);
-        for (int j = 0; j < n_vocab; ++j) {
-            cdata[j].id    = (llama_token)j;
-            cdata[j].logit = logits[j];
-            cdata[j].p     = 0.0f;
-        }
-        llama_token_data_array cands{ cdata.data(), (size_t)n_vocab, false };
-
-        llama_token new_tok = llama_sample_token_greedy(g_state.ctx, &cands);
-
-        if (llama_token_is_eog(g_state.model, new_tok)) {
+        // 检查 EOS
+        if (llama_vocab_is_eog(vocab, new_tok)) {
             LOGI("EOS at step %d", i);
             break;
         }
 
-        // token → piece
-        char buf[128] = {0};
-        int n_char = llama_token_to_piece(
-            g_state.model, new_tok,
-            buf, (int32_t)(sizeof(buf) - 1),
-            0, true
-        );
+        // token → text
+        char buf[256] = {0};
+        int n_char = llama_token_to_piece(vocab, new_tok, buf, (int32_t)(sizeof(buf) - 1), 0, true);
         if (n_char > 0) {
             buf[n_char] = '\0';
             output += buf;
             deliverCallback(env, callback, "onToken", buf);
         }
 
-        // decode 下一个 token，position = cur_pos
-        llama_batch b2 = llama_batch_get_one(&new_tok, 1, cur_pos, 0);
-        cur_pos++;
+        // decode 新 token
+        llama_batch b2 = llama_batch_get_one(&new_tok, 1);
         int ret = llama_decode(g_state.ctx, b2);
         if (ret != 0) {
             LOGE("Decode failed at step %d: %d", i, ret);
@@ -189,14 +185,16 @@ static void runInference(const string& prompt, jobject callback) {
     g_state.running = false;
 }
 
-// ─── Native method implementations (plain names, no JNI mangling) ────────────
+// ─── Native method implementations ────────────────────────────────────────────
 static jboolean nativeInit(JNIEnv* env, jobject, jstring modelPath) {
     lock_guard<mutex> lock(g_state.mtx);
 
     LOGI("nativeInit called");
 
-    if (g_state.ctx)  { llama_free(g_state.ctx);  g_state.ctx  = nullptr; }
-    if (g_state.model) { llama_free_model(g_state.model); g_state.model = nullptr; }
+    // 清理旧状态
+    if (g_state.sampler) { llama_sampler_free(g_state.sampler); g_state.sampler = nullptr; }
+    if (g_state.ctx)     { llama_free(g_state.ctx);              g_state.ctx     = nullptr; }
+    if (g_state.model)   { llama_model_free(g_state.model);       g_state.model   = nullptr; }
 
     const char* path = env->GetStringUTFChars(modelPath, nullptr);
     if (!path) {
@@ -209,87 +207,69 @@ static jboolean nativeInit(JNIEnv* env, jobject, jstring modelPath) {
 
     LOGI("Loading model: %s", g_state.modelPath.c_str());
 
-    // 检查文件是否存在
     FILE* f = fopen(g_state.modelPath.c_str(), "rb");
     if (!f) {
         g_state.lastError = "模型文件不存在或无法读取: " + g_state.modelPath;
         LOGE("Cannot open model file: %s", g_state.modelPath.c_str());
         return JNI_FALSE;
     }
-    
-    // 检查文件大小
     fseek(f, 0, SEEK_END);
     long fileSize = ftell(f);
     fclose(f);
     LOGI("Model file size: %ld bytes (%.1f MB)", fileSize, fileSize / 1024.0 / 1024.0);
-    
-    if (fileSize < 100000000) {  // < 100MB
+
+    if (fileSize < 50 * 1024 * 1024) {
         g_state.lastError = "模型文件太小，可能下载不完整";
         LOGE("Model file too small: %ld bytes", fileSize);
         return JNI_FALSE;
     }
 
-    // 纯 CPU 模式，更稳定
+    // 模型参数：纯 CPU，无 GPU 加速
     llama_model_params mparams = llama_model_default_params();
     mparams.n_gpu_layers = 0;
     mparams.use_mmap     = true;
     mparams.use_mlock    = false;
 
-    LOGI("Calling llama_load_model_from_file...");
-    
-    // 使用 try-catch 捕获可能的崩溃
-    try {
-        g_state.model = llama_load_model_from_file(g_state.modelPath.c_str(), mparams);
-    } catch (const std::exception& e) {
-        g_state.lastError = string("模型加载异常: ") + e.what();
-        LOGE("Exception during llama_load_model_from_file: %s", e.what());
-        return JNI_FALSE;
-    } catch (...) {
-        g_state.lastError = "模型加载时发生未知异常";
-        LOGE("Unknown exception during llama_load_model_from_file");
-        return JNI_FALSE;
-    }
-    
+    LOGI("Calling llama_model_load_from_file...");
+    g_state.model = llama_model_load_from_file(g_state.modelPath.c_str(), mparams);
     if (!g_state.model) {
-        g_state.lastError = "模型加载失败：llama_load_model_from_file 返回空";
-        LOGE("llama_load_model_from_file returned null");
+        g_state.lastError = "模型加载失败：llama_model_load_from_file 返回空";
+        LOGE("llama_model_load_from_file returned null");
         return JNI_FALSE;
     }
-
     LOGI("Model loaded OK, creating context...");
 
+    // 上下文参数
     llama_context_params cparams = llama_context_default_params();
     cparams.n_ctx           = 512;
     cparams.n_threads       = 2;
     cparams.n_threads_batch = 2;
 
-    LOGI("Calling llama_new_context_with_model...");
-    
-    try {
-        g_state.ctx = llama_new_context_with_model(g_state.model, cparams);
-    } catch (const std::exception& e) {
-        g_state.lastError = string("创建上下文异常: ") + e.what();
-        LOGE("Exception during llama_new_context_with_model: %s", e.what());
-        llama_free_model(g_state.model);
-        g_state.model = nullptr;
-        return JNI_FALSE;
-    } catch (...) {
-        g_state.lastError = "创建上下文时发生未知异常";
-        LOGE("Unknown exception during llama_new_context_with_model");
-        llama_free_model(g_state.model);
-        g_state.model = nullptr;
-        return JNI_FALSE;
-    }
-    
+    LOGI("Calling llama_init_from_model...");
+    g_state.ctx = llama_init_from_model(g_state.model, cparams);
     if (!g_state.ctx) {
         g_state.lastError = "无法创建推理上下文，设备内存可能不足";
-        LOGE("llama_new_context_with_model returned null");
-        llama_free_model(g_state.model);
+        LOGE("llama_init_from_model returned null");
+        llama_model_free(g_state.model);
         g_state.model = nullptr;
         return JNI_FALSE;
     }
 
-    LOGI("Init complete. ctx=%p model=%p", (void*)g_state.ctx, (void*)g_state.model);
+    // 初始化 greedy 采样器
+    LOGI("Creating greedy sampler...");
+    g_state.sampler = llama_sampler_init_greedy();
+    if (!g_state.sampler) {
+        g_state.lastError = "无法初始化采样器";
+        LOGE("llama_sampler_init_greedy returned null");
+        llama_free(g_state.ctx);
+        llama_model_free(g_state.model);
+        g_state.ctx   = nullptr;
+        g_state.model = nullptr;
+        return JNI_FALSE;
+    }
+
+    LOGI("Init complete. ctx=%p model=%p sampler=%p",
+         (void*)g_state.ctx, (void*)g_state.model, (void*)g_state.sampler);
     return JNI_TRUE;
 }
 
@@ -343,51 +323,24 @@ static void nativeRelease(JNIEnv*, jobject) {
             g_state.inferenceThread = nullptr;
         }
     }
-    if (g_state.ctx)  { llama_free(g_state.ctx);  g_state.ctx  = nullptr; }
-    if (g_state.model) { llama_free_model(g_state.model); g_state.model = nullptr; }
+    if (g_state.sampler) { llama_sampler_free(g_state.sampler); g_state.sampler = nullptr; }
+    if (g_state.ctx)     { llama_free(g_state.ctx);              g_state.ctx     = nullptr; }
+    if (g_state.model)   { llama_model_free(g_state.model);       g_state.model   = nullptr; }
     LOGI("Released");
 }
 
-// ─── RegisterNatives: 显式绑定，彻底避免名称转义问题 ──────────────────────────
+// ─── RegisterNatives ──────────────────────────────────────────────────────────
 static const JNINativeMethod METHODS[] = {
-    {
-        "_init",                    // Kotlin: private external fun _init(...)
-        "(Ljava/lang/String;)Z",
-        (void*)nativeInit
-    },
-    {
-        "_isLoaded",                // Kotlin: private external fun _isLoaded()
-        "()Z",
-        (void*)nativeIsModelLoaded
-    },
-    {
-        "_getLastError",            // Kotlin: private external fun _getLastError()
-        "()Ljava/lang/String;",
-        (void*)nativeGetLastError
-    },
-    {
-        "_generateAsync",           // Kotlin: private external fun _generateAsync(...)
-        "(Ljava/lang/String;Lcom/cunyi/doctor/llm/LlamaEngine$GenerationCallback;)V",
-        (void*)nativeGenerateAsync
-    },
-    {
-        "_stop",                    // Kotlin: private external fun _stop()
-        "()V",
-        (void*)nativeStop
-    },
-    {
-        "_isRunning",               // Kotlin: private external fun _isRunning()
-        "()Z",
-        (void*)nativeIsRunning
-    },
-    {
-        "_release",                 // Kotlin: private external fun _release()
-        "()V",
-        (void*)nativeRelease
-    }
+    { "_init",           "(Ljava/lang/String;)Z",                                              (void*)nativeInit           },
+    { "_isLoaded",       "()Z",                                                                (void*)nativeIsModelLoaded   },
+    { "_getLastError",   "()Ljava/lang/String;",                                              (void*)nativeGetLastError   },
+    { "_generateAsync",  "(Ljava/lang/String;Lcom/cunyi/doctor/llm/LlamaEngine$GenerationCallback;)V", (void*)nativeGenerateAsync },
+    { "_stop",           "()V",                                                                (void*)nativeStop            },
+    { "_isRunning",      "()Z",                                                                (void*)nativeIsRunning       },
+    { "_release",        "()V",                                                                (void*)nativeRelease         }
 };
 
-static const int METHOD_COUNT = sizeof(METHODS) / sizeof(METHODS[0]);
+static const int METHOD_COUNT = (int)(sizeof(METHODS) / sizeof(METHODS[0]));
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     g_jvm = vm;

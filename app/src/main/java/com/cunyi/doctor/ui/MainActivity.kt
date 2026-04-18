@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.cunyi.doctor.databinding.ActivityMainBinding
 import com.cunyi.doctor.R
 import com.cunyi.doctor.llm.LlamaEngine
+import com.cunyi.doctor.llm.ModelConfig
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -247,15 +248,17 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun autoLoadModel() {
         val engine = LlamaEngine.getInstance(this)
-        val modelFile = engine.getModelFile()
+        val downloaded = engine.findDownloadedModel()
 
         if (engine.isModelLoaded) {
             vb.tvStatus.text = "✅ 模型已就绪"
             vb.btnSend.isEnabled = true
             vb.etInput.isEnabled = true
             vb.btnDownload.visibility = View.GONE
-        } else if (modelFile.exists()) {
-            // 模型文件存在但未加载，直接加载
+        } else if (downloaded != null) {
+            // 已有模型文件，直接加载
+            engine.selectModel(downloaded)
+            vb.tvStatus.text = "正在加载 ${downloaded.name}..."
             vb.btnSend.isEnabled = false
             vb.etInput.isEnabled = false
             vb.btnDownload.visibility = View.GONE
@@ -263,36 +266,47 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 runOnUiThread { updateLoadProgress(progress, msg) }
             }
         } else {
-            // 模型文件不存在，显示下载按钮
-            vb.tvStatus.text = "📥 模型未下载（约${LlamaEngine.MODEL_SIZE}）"
+            // 没有任何模型文件，显示下载按钮
+            vb.tvStatus.text = "📥 请下载模型"
             vb.btnSend.isEnabled = false
             vb.etInput.isEnabled = false
             vb.btnDownload.visibility = View.VISIBLE
-            vb.btnDownload.setOnClickListener { showDownloadConfirmDialog() }
+            vb.btnDownload.setOnClickListener { showModelSelectDialog() }
         }
     }
 
-    private fun showDownloadConfirmDialog() {
+    private fun showModelSelectDialog() {
+        val modelNames = LlamaEngine.MODELS.map { "${it.name} — ${it.desc}" }.toTypedArray()
+        var selectedIdx = 0
+
         AlertDialog.Builder(this)
-            .setTitle("下载模型")
-            .setMessage("村医AI需要下载大语言模型（约${LlamaEngine.MODEL_SIZE}），请确保：\n\n" +
-                    "1. 连接Wi-Fi网络\n" +
-                    "2. 手机存储空间充足\n" +
-                    "3. 下载过程请勿关闭应用\n\n" +
-                    "下载地址：\n${LlamaEngine.MODEL_URL}")
-            .setCancelable(true)
-            .setPositiveButton("开始下载") { _, _ ->
-                vb.btnDownload.visibility = View.GONE
-                startModelDownload()
+            .setTitle("选择模型")
+            .setSingleChoiceItems(modelNames, 0) { _, which -> selectedIdx = which }
+            .setPositiveButton("下载") { _, _ ->
+                val model = LlamaEngine.MODELS[selectedIdx]
+                showDownloadConfirmDialog(model)
             }
             .setNegativeButton("取消", null)
             .show()
     }
 
-    private fun startModelDownload() {
-        vm.loadModel { progress, msg ->
-            runOnUiThread { updateLoadProgress(progress, msg) }
-        }
+    private fun showDownloadConfirmDialog(model: ModelConfig) {
+        AlertDialog.Builder(this)
+            .setTitle("下载 ${model.name}")
+            .setMessage("即将下载 ${model.name}（约${model.size}），请确保：\n\n" +
+                    "1. 连接Wi-Fi网络\n" +
+                    "2. 手机存储空间充足\n" +
+                    "3. 下载过程请勿关闭应用\n\n" +
+                    "下载地址：\n${model.url}")
+            .setCancelable(true)
+            .setPositiveButton("开始下载") { _, _ ->
+                vb.btnDownload.visibility = View.GONE
+                vm.loadModel(model) { progress, msg ->
+                    runOnUiThread { updateLoadProgress(progress, msg) }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
 
@@ -344,11 +358,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             }
                             loadDialog = null
                             vb.btnDownload.visibility = View.VISIBLE
+                            vb.btnDownload.setOnClickListener { showModelSelectDialog() }
                             AlertDialog.Builder(this@MainActivity)
                                 .setTitle("模型加载失败")
                                 .setMessage(state.msg)
                                 .setPositiveButton("重新下载") { _, _ ->
-                                    startModelDownload()
+                                    vb.btnDownload.visibility = View.GONE
+                                    vm.loadModel { progress, msg ->
+                                        runOnUiThread { updateLoadProgress(progress, msg) }
+                                    }
                                 }
                                 .setNegativeButton("取消", null)
                                 .show()
