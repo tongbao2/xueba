@@ -7,7 +7,9 @@
 - 🔒 **完全离线** — 模型下载后无需网络，数据不上传
 - 🧠 **本地推理** — 基于 llama.cpp JNI 桥接，纯 CPU 运行
 - 🗣️ **语音播报** — TTS 自动朗读 AI 回复，可一键开关
-- 📱 **轻量模型** — 支持 Qwen2.5-0.5B 等小型量化模型
+- 📱 **多模型选择**
+-    **轻量小模型** — 支持 Qwen2.5-0.5B 等小型量化模型
+-    **医疗大模型** — 支持 medgemma-1.5-4b-it医疗大模型
 - 💬 **流式输出** — 逐 token 生成，实时显示回复内容
 
 ## 🏗️ 技术架构
@@ -60,7 +62,7 @@ git clone --recurse-submodules https://github.com/tongbao2/cunyi-doctor-android.
 | 模型 | 大小 | 说明 |
 |------|------|------|
 | Qwen2.5-0.5B-Instruct-Q4_K_M | ~500MB | 默认，速度快 |
-| Qwen2.5-1.5B-Instruct-Q4_K_M | ~1.1GB | 效果更好 |
+| medgemma-1.5-4b-it医疗大模型   | ~2.5GB | 医疗大模型,效果更好 |
 
 修改 `LlamaEngine.kt` 中的 `MODEL_URL` 和 `MODEL_FILE` 即可切换模型。
 
