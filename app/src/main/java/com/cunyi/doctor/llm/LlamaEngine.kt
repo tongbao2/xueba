@@ -42,6 +42,15 @@ class LlamaEngine private constructor(private val context: Context) {
                 file = "medgemma-1.5-4b-it-q4_k_m.gguf",
                 size = "2.5 GB",
                 promptFormat = ModelPromptFormat.GEMMA
+            ),
+            ModelConfig(
+                id = "gemma-4-e2b",
+                name = "Gemma-4-E2B",
+                desc = "Gemma4 多模态模型，约 1.5GB",
+                url = "https://hf-mirror.com/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf",
+                file = "gemma-4-e2b-it-q4_k_m.gguf",
+                size = "1.5 GB",
+                promptFormat = ModelPromptFormat.GEMMA
             )
         )
     }
