@@ -29,7 +29,7 @@ class LlamaEngine private constructor(private val context: Context) {
                 id = "qwen2.5-0.5b",
                 name = "Qwen2.5-0.5B",
                 desc = "轻量通用模型，速度快，约 500MB",
-                url = "https://hf-mirror.com/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+                url = "https://www.modelscope.cn/models/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/master/qwen2.5-0.5b-instruct-q4_k_m.gguf",
                 file = "qwen2.5-0.5b-instruct-q4_k_m.gguf",
                 size = "500 MB",
                 promptFormat = ModelPromptFormat.QWEN
