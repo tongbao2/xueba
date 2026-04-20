@@ -26,7 +26,8 @@ class ChatAdapter : ListAdapter<MainViewModel.ChatMessage, RecyclerView.ViewHold
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if (position < currentList.size) VIEW_TYPE_BOT else VIEW_TYPE_STREAMING
+        if (position >= currentList.size) return VIEW_TYPE_STREAMING
+        return if (currentList[position].isUser) VIEW_TYPE_USER else VIEW_TYPE_BOT
     }
 
     override fun getItemCount(): Int {

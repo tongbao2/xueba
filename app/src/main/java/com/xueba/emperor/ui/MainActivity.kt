@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun speak(text: String) {
         if (!ttsEnabled || !ttsReady || text.isBlank()) return
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "doctor_response")
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "xueba_response")
     }
 
     private fun stopSpeaking() {

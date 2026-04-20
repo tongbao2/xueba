@@ -38,7 +38,7 @@ object ModelDownloadManager {
             conn.connectTimeout = 15_000
             conn.readTimeout = 120_000
             conn.requestMethod = "GET"
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; CunYiDoctor/1.0)")
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; XuebaEmperor/1.0)")
             conn.connect()
 
             val responseCode = conn.responseCode
