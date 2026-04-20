@@ -9,7 +9,7 @@
 - 🗣️ **语音播报** — TTS 自动朗读 AI 回复
 - 📸 **图片 OCR** — 拍照/选图识别文字，结合 LLM 解答
 - 💬 **流式输出** — 逐 token 生成，实时显示回复内容
-- 📱 **多模型选择** — 支持 Qwen2.5 和 Gemma 系列
+- 📱 **多模型选择** — 支持 Qwen2.5,DeepSeek-R1-Distill 和 Gemma 系列
 
 ## 🏗️ 技术架构
 
@@ -62,6 +62,7 @@ cd xuebadi
 | 模型 | 大小 | 说明 |
 |------|------|------|
 | Qwen2.5-0.5B-Instruct-Q4_K_M | ~500MB | 默认，速度快 |
+| DeepSeek-R1-Distill | ~1.2GB | 推理大模型，效果更好 |
 | gemma-4-E2B-it-Q4_K_M | ~2.9GB | Google 大模型，效果更好 |
 
 模型来源：[ModelScope](https://www.modelscope.cn)
