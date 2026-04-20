@@ -1,6 +1,6 @@
-# 🏥 村医AI - 离线大模型问诊Android应用
+# 🦞学霸帝🦞
 
-基于 **llama.cpp + GGUF** 的本地离线医疗问诊 Android 应用，无需网络即可运行大语言模型推理。
+基于 **llama.cpp + GGUF** 的本地离线 Android 应用，无需网络即可运行大语言模型推理。
 
 ## ✨ 特性
 
@@ -9,7 +9,7 @@
 - 🗣️ **语音播报** — TTS 自动朗读 AI 回复，可一键开关
 - 📱 **多模型选择**
 -    **轻量小模型** — 支持 Qwen2.5-0.5B 等小型量化模型
--    **医疗大模型** — 支持 medgemma-1.5-4b-it医疗大模型
+-    **医疗大模型** — 支持 medgemma-1.5-4b-it大模型
 - 💬 **流式输出** — 逐 token 生成，实时显示回复内容
 
 ## 🏗️ 技术架构
@@ -55,14 +55,14 @@ git clone --recurse-submodules https://github.com/tongbao2/cunyi-doctor-android.
 1. 安装 APK 到 Android 设备
 2. 首次打开点击「📥 下载模型」按钮
 3. 等待模型下载完成（约 500MB）
-4. 开始问诊对话
+4. 开始对话
 
 ## 🤖 支持的模型
 
 | 模型 | 大小 | 说明 |
 |------|------|------|
 | Qwen2.5-0.5B-Instruct-Q4_K_M | ~500MB | 默认，速度快 |
-| medgemma-1.5-4b-it医疗大模型   | ~2.5GB | 医疗大模型,效果更好 |
+| medgemma-1.5-4b-it医疗大模型   | ~2.5GB | 大模型,效果更好 |
 
 修改 `LlamaEngine.kt` 中的 `MODEL_URL` 和 `MODEL_FILE` 即可切换模型。
 
