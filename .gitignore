@@ -1,0 +1,32 @@
+# Built application files
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Java/Kotlin compiled
+*.class
+
+# Build directories
+build/
+app/build/
+.gradle/
+
+# Local configuration
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# NDK build intermediates
+app/.cxx/
+app/src/main/cpp/llama.cpp-src/build/
+.cxx/
+
+# Gradle cache
+.gradle
+
+# Log files
+*.log
