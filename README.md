@@ -62,7 +62,7 @@ cd xuebadi
 | 模型 | 大小 | 说明 |
 |------|------|------|
 | Qwen2.5-0.5B-Instruct-Q4_K_M | ~500MB | 默认，速度快 |
-| gemma-4-E2B-it-Q4_K_M | ~1.5GB | Google 大模型，效果更好 |
+| gemma-4-E2B-it-Q4_K_M | ~2.9GB | Google 大模型，效果更好 |
 
 模型来源：[ModelScope](https://www.modelscope.cn)
 
