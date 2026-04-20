@@ -1,6 +1,6 @@
 # 🦞学霸帝🦞
 
-基于 **llama.cpp + GGUF** 的本地离线 Android 应用，无需网络即可运行大语言模型推理。
+基于 **llama.cpp + GGUF** 的本地离线 HarmonyOS 应用，无需网络即可运行大语言模型推理。
 
 ## ✨ 特性
 
