@@ -1,11 +1,11 @@
-package com.cunyi.doctor.ui
+package com.xueba.emperor.ui
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.cunyi.doctor.llm.LlamaEngine
-import com.cunyi.doctor.llm.ModelConfig
-import com.cunyi.doctor.utils.ImageTextRecognizer
+import com.xueba.emperor.llm.LlamaEngine
+import com.xueba.emperor.llm.ModelConfig
+import com.xueba.emperor.utils.ImageTextRecognizer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

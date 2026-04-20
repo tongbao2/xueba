@@ -1,4 +1,4 @@
-package com.cunyi.doctor.llm
+package com.xueba.emperor.llm
 
 /**
  * 模型配置（top-level class，供其他文件引用）
@@ -8,6 +8,7 @@ data class ModelConfig(
     val name: String,
     val desc: String,
     val url: String,
+    val backupUrl: String = "",
     val file: String,
     val size: String,
     val promptFormat: ModelPromptFormat

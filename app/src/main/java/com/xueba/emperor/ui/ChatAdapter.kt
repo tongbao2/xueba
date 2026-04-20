@@ -1,4 +1,4 @@
-package com.cunyi.doctor.ui
+package com.xueba.emperor.ui
 
 import android.graphics.BitmapFactory
 import android.view.Gravity
@@ -11,8 +11,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.cunyi.doctor.databinding.ItemMessageBotBinding
-import com.cunyi.doctor.databinding.ItemMessageUserBinding
+import com.xueba.emperor.databinding.ItemMessageBotBinding
+import com.xueba.emperor.databinding.ItemMessageUserBinding
 import java.io.File
 
 class ChatAdapter : ListAdapter<MainViewModel.ChatMessage, RecyclerView.ViewHolder>(Diff()) {

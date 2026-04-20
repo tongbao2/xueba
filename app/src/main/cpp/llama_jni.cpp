@@ -334,7 +334,7 @@ static const JNINativeMethod METHODS[] = {
     { "_init",           "(Ljava/lang/String;)Z",                                              (void*)nativeInit           },
     { "_isLoaded",       "()Z",                                                                (void*)nativeIsModelLoaded   },
     { "_getLastError",   "()Ljava/lang/String;",                                              (void*)nativeGetLastError   },
-    { "_generateAsync",  "(Ljava/lang/String;Lcom/cunyi/doctor/llm/LlamaEngine$GenerationCallback;)V", (void*)nativeGenerateAsync },
+    { "_generateAsync",  "(Ljava/lang/String;Lcom/xueba/emperor/llm/LlamaEngine$GenerationCallback;)V", (void*)nativeGenerateAsync },
     { "_stop",           "()V",                                                                (void*)nativeStop            },
     { "_isRunning",      "()Z",                                                                (void*)nativeIsRunning       },
     { "_release",        "()V",                                                                (void*)nativeRelease         }
@@ -350,7 +350,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
         return JNI_ERR;
     }
 
-    jclass cls = env->FindClass("com/cunyi/doctor/llm/LlamaEngine");
+    jclass cls = env->FindClass("com/xueba/emperor/llm/LlamaEngine");
     if (!cls) {
         LOGE("FindClass LlamaEngine failed");
         return JNI_ERR;

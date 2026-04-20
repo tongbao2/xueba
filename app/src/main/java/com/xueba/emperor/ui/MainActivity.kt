@@ -1,4 +1,4 @@
-package com.cunyi.doctor.ui
+package com.xueba.emperor.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -22,10 +22,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.cunyi.doctor.databinding.ActivityMainBinding
-import com.cunyi.doctor.R
-import com.cunyi.doctor.llm.LlamaEngine
-import com.cunyi.doctor.llm.ModelConfig
+import com.xueba.emperor.databinding.ActivityMainBinding
+import com.xueba.emperor.R
+import com.xueba.emperor.llm.LlamaEngine
+import com.xueba.emperor.llm.ModelConfig
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun setupToolbar() {
-        vb.toolbar.title = "村医AI"
+        vb.toolbar.title = "学霸帝🦞"
         vb.toolbar.subtitle = "本地离线 · 隐私安全"
     }
 
@@ -335,7 +335,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     vm.modelLoadState.collect { state ->
                         when (state) {
                             is LlamaEngine.LoadState.Idle -> {
-                                vb.tvStatus.text = "等待加载模型..."
+                                vb.tvStatus.text = "等待学霸降临..."
                                 vb.progressLoad.visibility = View.GONE
                             }
                             is LlamaEngine.LoadState.Loading -> {
@@ -453,13 +453,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun showDownloadConfirmDialog(model: ModelConfig) {
+        val msg = buildString {
+            append("即将下载 ${model.name}（约${model.size}），请确保：\n\n")
+            append("1. 连接Wi-Fi网络\n")
+            append("2. 手机存储空间充足\n")
+            append("3. 下载过程请勿关闭应用\n\n")
+            append("下载地址：\n${model.url}")
+            if (model.backupUrl.isNotEmpty()) {
+                append("\n\n备用地址：\n${model.backupUrl}")
+            }
+        }
         AlertDialog.Builder(this)
             .setTitle("下载 ${model.name}")
-            .setMessage("即将下载 ${model.name}（约${model.size}），请确保：\n\n" +
-                    "1. 连接Wi-Fi网络\n" +
-                    "2. 手机存储空间充足\n" +
-                    "3. 下载过程请勿关闭应用\n\n" +
-                    "下载地址：\n${model.url}")
+            .setMessage(msg)
             .setCancelable(true)
             .setPositiveButton("开始下载") { _, _ ->
                 vb.btnDownload.visibility = View.GONE

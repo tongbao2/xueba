@@ -1,15 +1,15 @@
-package com.cunyi.doctor
+package com.xueba.emperor
 
 import android.app.Application
 
-class CunyiDoctorApp : Application() {
+class XuebaEmperorApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
     }
 
     companion object {
-        lateinit var instance: CunyiDoctorApp
+        lateinit var instance: XuebaEmperorApp
             private set
     }
 }

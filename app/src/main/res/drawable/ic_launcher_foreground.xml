@@ -4,15 +4,12 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- White medical cross -->
+
+    <!-- White cross accent on adaptive icon foreground -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M49,29h10v50h-10z"/>
+        android:pathData="M49,30h10v48h-10z"/>
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M29,49h50v10h-50z"/>
-    <!-- Plus sign -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M50,42h6v6h-6z M46,50h6v6h-6z M50,54h6v6h-6z M54,50h6v6h-6z"/>
+        android:pathData="M30,49h48v10h-48z"/>
 </vector>

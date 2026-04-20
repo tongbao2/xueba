@@ -1,4 +1,4 @@
-package com.cunyi.doctor.utils
+package com.xueba.emperor.utils
 
 import android.content.Context
 import android.graphics.Bitmap

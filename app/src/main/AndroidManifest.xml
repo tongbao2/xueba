@@ -14,13 +14,13 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
-        android:name=".CunyiDoctorApp"
+        android:name=".XuebaEmperorApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.CunyiDoctor"
+        android:theme="@style/Theme.XuebaEmperor"
         android:usesCleartextTraffic="true"
         tools:targetApi="35">
 

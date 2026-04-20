@@ -1,8 +1,8 @@
-package com.cunyi.doctor.llm
+package com.xueba.emperor.llm
 
 import android.content.Context
 import android.util.Log
-import com.cunyi.doctor.data.ModelDownloadManager
+import com.xueba.emperor.data.ModelDownloadManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,39 +16,31 @@ class LlamaEngine private constructor(private val context: Context) {
         private var INSTANCE: LlamaEngine? = null
 
         init {
-            System.loadLibrary("cunyi_doctor")
+            System.loadLibrary("xueba")
         }
 
         fun getInstance(ctx: Context): LlamaEngine {
             return INSTANCE ?: LlamaEngine(ctx.applicationContext).also { INSTANCE = it }
         }
 
-        // ── 可选模型列表 ──────────────────────────────────────────────────
+        // ── 模型列表 ──────────────────────────────────────────────────────
         val MODELS = listOf(
             ModelConfig(
                 id = "qwen2.5-0.5b",
                 name = "Qwen2.5-0.5B",
-                desc = "轻量通用模型，速度快，约 500MB",
+                desc = "通用学霸模型，离线运行，约 500MB",
                 url = "https://www.modelscope.cn/models/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/master/qwen2.5-0.5b-instruct-q4_k_m.gguf",
                 file = "qwen2.5-0.5b-instruct-q4_k_m.gguf",
                 size = "500 MB",
                 promptFormat = ModelPromptFormat.QWEN
             ),
             ModelConfig(
-                id = "medgemma-1.5-4b",
-                name = "MedGemma-1.5-4B",
-                desc = "医疗专精模型，效果更好，约 2.5GB",
-                url = "https://www.modelscope.cn/models/unsloth/medgemma-1.5-4b-it-GGUF/resolve/master/medgemma-1.5-4b-it-Q4_K_M.gguf",
-                file = "medgemma-1.5-4b-it-q4_k_m.gguf",
-                size = "2.5 GB",
-                promptFormat = ModelPromptFormat.GEMMA
-            ),
-            ModelConfig(
                 id = "gemma-4-e2b",
                 name = "Gemma-4-E2B",
-                desc = "Gemma4 多模态模型，约 1.5GB",
-                url = "https://hf-mirror.com/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf",
-                file = "gemma-4-e2b-it-q4_k_m.gguf",
+                desc = "Google 高性能模型，离线运行，约 1.5GB",
+                url = "https://www.modelscope.cn/models/unsloth/gemma-4-E2B-it-GGUF/resolve/master/gemma-4-E2B-it-Q4_K_M.gguf",
+                backupUrl = "https://www.modelscope.cn/models/unsloth/gemma-4-E2B-it-GGUF/resolve/master/gemma-4-E2B-it-Q3_K_M.gguf",
+                file = "gemma-4-E2B-it-Q4_K_M.gguf",
                 size = "1.5 GB",
                 promptFormat = ModelPromptFormat.GEMMA
             )
@@ -91,12 +83,24 @@ class LlamaEngine private constructor(private val context: Context) {
 
             if (!file.exists()) {
                 progress(0, "正在下载 ${selectedModel.name}...")
-                val downloadResult = ModelDownloadManager.download(
+                var downloadResult = ModelDownloadManager.download(
                     context = context,
                     url = selectedModel.url,
                     fileName = selectedModel.file
                 ) { dlProgress, dlMsg ->
                     progress(dlProgress, dlMsg)
+                }
+                // 主地址失败 → 尝试备用地址
+                if (downloadResult.isFailure && selectedModel.backupUrl.isNotEmpty()) {
+                    Log.w(TAG, "Primary download failed, trying backup URL...")
+                    progress(0, "主下载地址失败，尝试备用地址...")
+                    downloadResult = ModelDownloadManager.download(
+                        context = context,
+                        url = selectedModel.backupUrl,
+                        fileName = selectedModel.file
+                    ) { dlProgress, dlMsg ->
+                        progress(dlProgress, dlMsg)
+                    }
                 }
                 if (downloadResult.isFailure) {
                     val err = downloadResult.exceptionOrNull()?.message ?: "下载失败"
@@ -200,15 +204,14 @@ class LlamaEngine private constructor(private val context: Context) {
         return when (selectedModel.promptFormat) {
             ModelPromptFormat.QWEN -> {
                 """<|im_start|>system
-你是一位专业、温暖、有耐心的村医。请根据以下问题给出详细、易懂的健康建议。<|im_end|>
+你是一个学识渊博、逻辑严谨、表达清晰的学霸。无论对方问什么领域的问题——数学、物理、化学、生物、历史、地理、语文、英语、编程、学习方法、竞赛题目——你都能给出准确、详尽、深入浅出的解答。你的风格是：严谨但不刻板，博学但不卖弄，总能用最清晰的方式把复杂的问题讲明白。遇到难题你会一步步拆解，遇到计算题你会给出完整推导过程。必要时给出例题和方法论，让对方不仅知道答案，更理解背后的原理。<|im_end|>
 <|im_start|>user
 $userMessage<|im_end|>
 <|im_start|>assistant
 """
             }
             ModelPromptFormat.GEMMA -> {
-                // Gemma / MedGemma prompt 格式
-                "<start_of_turn>user\n你是一位专业、温暖、有耐心的村医。请根据以下问题给出详细、易懂的健康建议。\n\n$userMessage<end_of_turn>\n<start_of_turn>model\n"
+                "<start_of_turn>user\n你是一个学识渊博、逻辑严谨、表达清晰的学霸。无论对方问什么领域的问题——数学、物理、化学、生物、历史、地理、语文、英语、编程、学习方法、竞赛题目——你都能给出准确、详尽、深入浅出的解答。遇到难题你会一步步拆解，遇到计算题你会给出完整推导过程。\n\n$userMessage<end_of_turn>\n<start_of_turn>model\n"
             }
         }
     }

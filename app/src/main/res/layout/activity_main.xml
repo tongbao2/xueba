@@ -16,7 +16,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="#1565C0"
+            android:background="#6A1B9A"
             app:titleTextColor="@android:color/white"
             app:subtitleTextColor="#BBDEFB" />
 
@@ -33,7 +33,7 @@
             android:id="@+id/tv_disclaimer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⚠️ AI建议仅供参考，不能替代医生诊断。如有不适，请及时就医。"
+            android:text="⚠️ AI回答仅供参考，学霸也可能有错漏。学习重要，但也要注意休息！"
             android:textSize="11sp"
             android:textColor="#795548"
             android:background="#FFF8E1"
@@ -47,7 +47,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:padding="8dp"
-            android:background="#E3F2FD">
+            android:background="#F3E5F5">
 
             <ProgressBar
                 android:id="@+id/progress_load"
@@ -66,7 +66,7 @@
                 android:layout_weight="1"
                 android:text="等待加载模型..."
                 android:textSize="12sp"
-                android:textColor="#1565C0"
+                android:textColor="#6A1B9A"
                 android:paddingStart="8dp" />
 
             <Button
@@ -75,7 +75,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="📥 下载模型"
-                android:textColor="#1565C0"
+                android:textColor="#6A1B9A"
                 android:visibility="gone" />
 
             <Button
@@ -84,7 +84,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="重试"
-                android:textColor="#1565C0"
+                android:textColor="#6A1B9A"
                 android:visibility="gone" />
 
         </LinearLayout>
@@ -116,7 +116,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="村医正在思考..."
+                android:text="学霸正在思考..."
                 android:textSize="13sp"
                 android:textColor="#666"
                 android:paddingStart="8dp" />
@@ -186,7 +186,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="描述您的健康问题..."
+                android:hint="问学霸任何问题..."
                 android:inputType="textMultiLine|textCapSentences"
                 android:maxLines="4"
                 android:background="@drawable/bg_input"
@@ -202,7 +202,7 @@
                 android:layout_marginStart="8dp"
                 android:text="发送"
                 android:enabled="false"
-                app:backgroundTint="#1565C0" />
+                app:backgroundTint="#6A1B9A" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_stop"

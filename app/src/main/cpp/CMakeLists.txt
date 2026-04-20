@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(cunyi_doctor)
+project(xueba)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,17 +24,17 @@ set(GGML_BLAS OFF CACHE BOOL "" FORCE)
 # llama.cpp (local source via submodule)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp-src llama_build)
 
-add_library(cunyi_doctor SHARED
+add_library(xueba SHARED
     llama_jni.cpp
 )
 
-target_include_directories(cunyi_doctor PRIVATE
+target_include_directories(xueba PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp-src
     ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp-src/include
     ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp-src/ggml/include
 )
 
-target_link_libraries(cunyi_doctor
+target_link_libraries(xueba
     PRIVATE
     llama
     ggml
