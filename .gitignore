@@ -1,0 +1,20 @@
+﻿# Build output & runtime (local only)
+dist/
+build/
+*.spec
+
+# Models (local only, never commit)
+models/
+*.gguf
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
