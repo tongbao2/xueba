@@ -14,4 +14,4 @@ data class ModelConfig(
     val promptFormat: ModelPromptFormat
 )
 
-enum class ModelPromptFormat { QWEN, GEMMA }
+enum class ModelPromptFormat { QWEN, GEMMA, DEEPSEEK_R1 }

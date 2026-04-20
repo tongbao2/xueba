@@ -43,6 +43,15 @@ class LlamaEngine private constructor(private val context: Context) {
                 file = "gemma-4-E2B-it-Q4_K_M.gguf",
                 size = "1.5 GB",
                 promptFormat = ModelPromptFormat.GEMMA
+            ),
+            ModelConfig(
+                id = "deepseek-r1-qwen-1.5b",
+                name = "DeepSeek-R1-1.5B",
+                desc = "深度求索推理模型，支持思维链，离线运行，约 1.2GB",
+                url = "https://www.modelscope.cn/models/unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/master/DeepSeek-R1-Distill-Qwen-1.5B-Q5_K_M.gguf",
+                file = "DeepSeek-R1-Distill-Qwen-1.5B-Q5_K_M.gguf",
+                size = "1.2 GB",
+                promptFormat = ModelPromptFormat.DEEPSEEK_R1
             )
         )
     }
@@ -212,6 +221,14 @@ $userMessage<|im_end|>
             }
             ModelPromptFormat.GEMMA -> {
                 "<start_of_turn>user\n你是一个学识渊博、逻辑严谨、表达清晰的学霸。无论对方问什么领域的问题——数学、物理、化学、生物、历史、地理、语文、英语、编程、学习方法、竞赛题目——你都能给出准确、详尽、深入浅出的解答。遇到难题你会一步步拆解，遇到计算题你会给出完整推导过程。\n\n$userMessage<end_of_turn>\n<start_of_turn>model\n"
+            }
+            ModelPromptFormat.DEEPSEEK_R1 -> {
+                """<|im_start|>system
+你是一个学识渊博、逻辑严谨、表达清晰的学霸。无论对方问什么领域的问题——数学、物理、化学、生物、历史、地理、语文、英语、编程、学习方法、竞赛题目——你都能给出准确、详尽、深入浅出的解答。遇到难题你会一步步拆解，遇到计算题你会给出完整推导过程。请先在<think]>标签内进行推理思考，再给出最终回答。<|im_end|>
+<|im_start|>user
+$userMessage<|im_end|>
+<|im_start|>assistant
+"""
             }
         }
     }
